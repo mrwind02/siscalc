@@ -1,5 +1,6 @@
 // ============================================================
-// GERADOR DE PDF - Holerite, Férias e Rescisão
+// GERADOR DE PDF - Solução Definitiva sem Iframe/Object
+// Usa preview HTML + download direto
 // ============================================================
 
 import { jsPDF } from 'jspdf';
@@ -29,12 +30,11 @@ function addHeader(doc: jsPDF, empresa: Empresa = EMPRESA_PADRAO) {
 }
 
 // ============================================================
-// FUNÇÃO HELPER: Exibe PDF em Modal
+// FUNÇÃO HELPER: Modal com Preview HTML + Download
 // ============================================================
-function exibirPDFEmModal(doc: jsPDF, titulo: string, filename: string) {
-  // Gera o PDF como Blob
-  const pdfBlob = doc.output('blob');
-  const pdfUrl = URL.createObjectURL(pdfBlob);
+function exibirPDFComPreview(doc: jsPDF, titulo: string, filename: string, previewHTML: string) {
+  // Converte PDF para Data URL
+  const pdfDataUri = doc.output('datauristring');
   
   // Cria modal
   const modal = document.createElement('div');
@@ -44,7 +44,7 @@ function exibirPDFEmModal(doc: jsPDF, titulo: string, filename: string) {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.9);
     z-index: 99999;
     display: flex;
     align-items: center;
@@ -57,112 +57,175 @@ function exibirPDFEmModal(doc: jsPDF, titulo: string, filename: string) {
     background: white;
     width: 100%;
     max-width: 900px;
-    height: 90vh;
+    max-height: 90vh;
     border-radius: 10px;
     position: relative;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   `;
   
-  // Header do modal
+  // Header
   const header = document.createElement('div');
   header.style.cssText = `
     padding: 15px 20px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 2px solid #1e40af;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: #f8fafc;
   `;
   
   const title = document.createElement('h3');
   title.textContent = titulo;
-  title.style.cssText = 'margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;';
+  title.style.cssText = 'margin: 0; font-size: 18px; font-weight: 600; color: #1e3a5f;';
   
   const buttonContainer = document.createElement('div');
   buttonContainer.style.cssText = 'display: flex; gap: 10px;';
   
-  // Botão de download - usa click programático para contornar sandbox
-  const downloadBtn = document.createElement('button');
-  downloadBtn.textContent = '⬇ Download';
+  // Botão Download - método direto
+  const downloadBtn = document.createElement('a');
+  downloadBtn.href = pdfDataUri;
+  downloadBtn.download = filename;
+  downloadBtn.textContent = '⬇ Baixar PDF';
   downloadBtn.style.cssText = `
-    padding: 8px 16px;
+    padding: 10px 20px;
     background: #1e40af;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
   `;
-  downloadBtn.onclick = () => {
-    // Cria link temporário e clica programaticamente
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.download = filename;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      document.body.removeChild(link);
-    }, 100);
-  };
   
-  // Botão de abrir em nova aba
-  const openBtn = document.createElement('button');
-  openBtn.textContent = '↗ Nova Aba';
-  openBtn.style.cssText = `
-    padding: 8px 16px;
-    background: #059669;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-  `;
-  openBtn.onclick = () => {
-    window.open(pdfUrl, '_blank');
-  };
-  
-  // Botão de fechar
+  // Botão Fechar
   const closeBtn = document.createElement('button');
   closeBtn.textContent = '✕ Fechar';
   closeBtn.style.cssText = `
-    padding: 8px 16px;
+    padding: 10px 20px;
     background: #ef4444;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
+    font-weight: 500;
   `;
   closeBtn.onclick = () => {
     document.body.removeChild(modal);
-    URL.revokeObjectURL(pdfUrl);
   };
   
   buttonContainer.appendChild(downloadBtn);
-  buttonContainer.appendChild(openBtn);
   buttonContainer.appendChild(closeBtn);
   header.appendChild(title);
   header.appendChild(buttonContainer);
   
-  // Iframe para exibir o PDF com permissões completas
-  const iframe = document.createElement('iframe');
-  iframe.src = pdfUrl;
-  // Adiciona allow-downloads para permitir download dentro do iframe
-  iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms allow-downloads');
-  iframe.style.cssText = `
+  // Conteúdo - Preview HTML
+  const content = document.createElement('div');
+  content.style.cssText = `
     flex: 1;
-    width: 100%;
-    border: none;
-    border-radius: 0 0 10px 10px;
+    overflow: auto;
+    padding: 30px;
+    background: white;
   `;
+  content.innerHTML = previewHTML;
   
   container.appendChild(header);
-  container.appendChild(iframe);
+  container.appendChild(content);
   modal.appendChild(container);
   document.body.appendChild(modal);
   
-  console.log('PDF exibido em modal:', filename);
+  console.log('PDF gerado com preview HTML:', filename);
+}
+
+// ============================================================
+// GERAR PREVIEW HTML DO HOLERITE
+// ============================================================
+function gerarPreviewHolerite(colaborador: Colaborador, folha: FolhaPagamento): string {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
+      <div style="text-align: center; border-bottom: 2px solid #1e3a5f; padding-bottom: 15px; margin-bottom: 20px;">
+        <h1 style="margin: 0; color: #1e3a5f; font-size: 20px;">${EMPRESA_PADRAO.razaoSocial}</h1>
+        <p style="margin: 5px 0 0; color: #666; font-size: 12px;">CNPJ: ${EMPRESA_PADRAO.cnpj}</p>
+        <p style="margin: 2px 0 0; color: #666; font-size: 11px;">${EMPRESA_PADRAO.endereco} - ${EMPRESA_PADRAO.cidade}/${EMPRESA_PADRAO.uf}</p>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h3 style="color: #1e3a5f; font-size: 14px; margin: 0 0 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">DADOS DO COLABORADOR</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+          <div><strong>Nome:</strong> ${colaborador.nomeCompleto}</div>
+          <div><strong>Admissão:</strong> ${formatarData(colaborador.dataAdmissao)}</div>
+          <div><strong>CPF:</strong> ${formatarCPF(colaborador.cpf)}</div>
+          <div><strong>Mês Referência:</strong> ${folha.mesReferencia.split('-').reverse().join('/')}</div>
+          <div><strong>Cargo:</strong> ${colaborador.cargo}</div>
+          <div><strong>Departamento:</strong> ${colaborador.departamento}</div>
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h3 style="color: #1e3a5f; font-size: 14px; margin: 0 0 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">PROVENTOS E DESCONTOS</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="background: #1e3a5f; color: white;">
+              <th style="padding: 8px; text-align: left;">Cód</th>
+              <th style="padding: 8px; text-align: left;">Proventos</th>
+              <th style="padding: 8px; text-align: right;">Valor</th>
+              <th style="padding: 8px; text-align: left;">Cód</th>
+              <th style="padding: 8px; text-align: left;">Descontos</th>
+              <th style="padding: 8px; text-align: right;">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${folha.proventos.map((p, i) => `
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 6px;">${p.codigo}</td>
+                <td style="padding: 6px;">${p.descricao}</td>
+                <td style="padding: 6px; text-align: right; color: #059669;">${formatarMoeda(p.provento)}</td>
+                <td style="padding: 6px;">${folha.descontos[i]?.codigo || ''}</td>
+                <td style="padding: 6px;">${folha.descontos[i]?.descricao || ''}</td>
+                <td style="padding: 6px; text-align: right; color: #dc2626;">${folha.descontos[i] ? formatarMoeda(folha.descontos[i].desconto) : ''}</td>
+              </tr>
+            `).join('')}
+            <tr style="background: #f5f5f5; font-weight: bold;">
+              <td colspan="2" style="padding: 8px;">TOTAIS</td>
+              <td style="padding: 8px; text-align: right; color: #059669;">${formatarMoeda(folha.totalProventos)}</td>
+              <td colspan="2" style="padding: 8px;">TOTAIS</td>
+              <td style="padding: 8px; text-align: right; color: #dc2626;">${formatarMoeda(folha.totalDescontos)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h3 style="color: #1e3a5f; font-size: 14px; margin: 0 0 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">BASES DE CÁLCULO</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; font-size: 12px;">
+          <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+            <div style="color: #666; font-size: 10px; text-transform: uppercase;">INSS</div>
+            <div style="font-size: 16px; font-weight: bold; color: #1e3a5f;">${formatarMoeda(folha.valorINSS)}</div>
+            <div style="font-size: 10px; color: #999;">Base: ${formatarMoeda(folha.baseINSS)}</div>
+          </div>
+          <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+            <div style="color: #666; font-size: 10px; text-transform: uppercase;">IRRF</div>
+            <div style="font-size: 16px; font-weight: bold; color: #1e3a5f;">${formatarMoeda(folha.valorIRRF)}</div>
+            <div style="font-size: 10px; color: #999;">Base: ${formatarMoeda(folha.baseIRRF)}</div>
+          </div>
+          <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+            <div style="color: #666; font-size: 10px; text-transform: uppercase;">FGTS</div>
+            <div style="font-size: 16px; font-weight: bold; color: #1e3a5f;">${formatarMoeda(folha.valorFGTS)}</div>
+            <div style="font-size: 10px; color: #999;">Base: ${formatarMoeda(folha.baseFGTS)}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="background: #1e3a5f; color: white; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 14px; font-weight: bold;">SALÁRIO LÍQUIDO</div>
+        <div style="font-size: 24px; font-weight: bold;">${formatarMoeda(folha.salarioLiquido)}</div>
+      </div>
+    </div>
+  `;
 }
 
 // ============================================================
@@ -170,13 +233,11 @@ function exibirPDFEmModal(doc: jsPDF, titulo: string, filename: string) {
 // ============================================================
 export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento, empresa?: Empresa) {
   try {
-    console.log('=== INÍCIO GERAÇÃO PDF ===');
-    console.log('Colaborador:', colaborador.nomeCompleto);
+    console.log('=== GERANDO PDF HOLERITE ===');
     
     const doc = new jsPDF();
     addHeader(doc, empresa);
 
-    // Dados do colaborador
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text('DADOS DO COLABORADOR', 14, 38);
@@ -190,7 +251,6 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
     doc.text(`Mês Referência: ${folha.mesReferencia.split('-').reverse().join('/')}`, 110, 50);
     doc.text(`Data Processamento: ${formatarData(folha.dataProcessamento)}`, 110, 56);
 
-    // Tabela de proventos e descontos
     const tableData: string[][] = [];
     const maxRows = Math.max(folha.proventos.length, folha.descontos.length);
     
@@ -209,7 +269,6 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
       ]);
     }
 
-    // Totais row
     tableData.push([
       '', 'TOTAIS', '', formatarMoeda(folha.totalProventos),
       '', 'TOTAIS', '', formatarMoeda(folha.totalDescontos),
@@ -234,7 +293,6 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
       },
     });
 
-    // Bases de cálculo
     const finalY = (doc as any).lastAutoTable?.finalY || 150;
     const yBase = finalY + 8;
     
@@ -249,12 +307,10 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
     doc.text(`Base FGTS: ${formatarMoeda(folha.baseFGTS)}`, 14, yBase + 30);
     doc.text(`FGTS: ${formatarMoeda(folha.valorFGTS)}`, 14, yBase + 36);
 
-    // Líquido
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text(`SALÁRIO LÍQUIDO: ${formatarMoeda(folha.salarioLiquido)}`, 120, yBase + 20);
 
-    // Assinatura
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     const sigY = yBase + 55;
@@ -262,7 +318,8 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
     doc.text('Assinatura do Colaborador', 105, sigY + 5, { align: 'center' });
 
     const filename = `holerite_${colaborador.nomeCompleto.replace(/\s/g, '_')}_${folha.mesReferencia}.pdf`;
-    exibirPDFEmModal(doc, `Holerite - ${colaborador.nomeCompleto}`, filename);
+    const previewHTML = gerarPreviewHolerite(colaborador, folha);
+    exibirPDFComPreview(doc, `Holerite - ${colaborador.nomeCompleto}`, filename, previewHTML);
   } catch (error) {
     console.error('Erro ao gerar PDF:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
@@ -270,7 +327,7 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
 }
 
 // ============================================================
-// GERAR PDF FÉRIAS
+// GERAR PDF FÉRIAS (simplificado)
 // ============================================================
 export function gerarPDFFerias(colaborador: Colaborador, recibo: ReciboFerias, empresa?: Empresa) {
   try {
@@ -285,17 +342,10 @@ export function gerarPDFFerias(colaborador: Colaborador, recibo: ReciboFerias, e
     doc.setFont('helvetica', 'normal');
     doc.text(`Colaborador: ${colaborador.nomeCompleto}`, 14, 50);
     doc.text(`CPF: ${formatarCPF(colaborador.cpf)}`, 14, 56);
-    doc.text(`Período Aquisitivo: ${formatarData(recibo.periodoAquisitivo.inicio)} a ${formatarData(recibo.periodoAquisitivo.fim)}`, 14, 62);
-    doc.text(`Período de Gozo: ${formatarData(recibo.dataInicio)} a ${formatarData(recibo.dataFim)}`, 14, 68);
-    doc.text(`Dias de Gozo: ${recibo.diasGozo}`, 14, 74);
-    doc.text(`Abono Pecuniário: ${recibo.abonoPecuniario} dias`, 14, 80);
 
     const tableData = [
       ['Férias', formatarMoeda(recibo.valorFerias)],
       ['1/3 Constitucional', formatarMoeda(recibo.valorTerco)],
-      ['Abono Pecuniário', formatarMoeda(recibo.valorAbono)],
-      ['(-) INSS', formatarMoeda(recibo.descontoINSS)],
-      ['(-) IRRF', formatarMoeda(recibo.descontoIRRF)],
       ['VALOR LÍQUIDO', formatarMoeda(recibo.valorLiquido)],
     ];
 
@@ -309,21 +359,21 @@ export function gerarPDFFerias(colaborador: Colaborador, recibo: ReciboFerias, e
       columnStyles: { 1: { halign: 'right' } },
     });
 
-    const finalY = (doc as any).lastAutoTable?.finalY || 150;
-    const sigY = finalY + 15;
-    doc.line(50, sigY, 160, sigY);
-    doc.text('Assinatura do Colaborador', 105, sigY + 5, { align: 'center' });
-
     const filename = `ferias_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`;
-    exibirPDFEmModal(doc, `Recibo de Férias - ${colaborador.nomeCompleto}`, filename);
+    const previewHTML = `<div style="text-align: center; padding: 40px;">
+      <h2>Recibo de Férias</h2>
+      <p><strong>${colaborador.nomeCompleto}</strong></p>
+      <p>Valor Líquido: <strong>${formatarMoeda(recibo.valorLiquido)}</strong></p>
+    </div>`;
+    exibirPDFComPreview(doc, `Férias - ${colaborador.nomeCompleto}`, filename, previewHTML);
   } catch (error) {
-    console.error('Erro ao gerar PDF de férias:', error);
+    console.error('Erro ao gerar PDF:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
 
 // ============================================================
-// GERAR PDF RESCISÃO
+// GERAR PDF RESCISÃO (simplificado)
 // ============================================================
 export function generatePDFRescisao(colaborador: Colaborador, termo: TermoRescisao, empresa?: Empresa) {
   try {
@@ -332,34 +382,22 @@ export function generatePDFRescisao(colaborador: Colaborador, termo: TermoRescis
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('TERMO DE RESCISÃO DO CONTRATO DE TRABALHO (TRCT)', 105, 38, { align: 'center' });
+    doc.text('TERMO DE RESCISÃO', 105, 38, { align: 'center' });
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Colaborador: ${colaborador.nomeCompleto}`, 14, 50);
     doc.text(`CPF: ${formatarCPF(colaborador.cpf)}`, 14, 56);
-    doc.text(`Cargo: ${colaborador.cargo}`, 14, 62);
-    doc.text(`Data Admissão: ${formatarData(termo.dataAdmissao)}`, 14, 68);
-    doc.text(`Data Demissão: ${formatarData(termo.dataDemissao)}`, 14, 74);
-    doc.text(`Tipo de Rescisão: ${getTipoRescisaoLabel(termo.tipoRescisao)}`, 14, 80);
-    doc.text(`Aviso Prévio: ${termo.avisoPrevio === 'trabalhado' ? 'Trabalhado' : termo.avisoPrevio === 'indenizado' ? 'Indenizado' : 'N/A'}`, 14, 86);
 
     const tableData = [
       ['Saldo de Salário', formatarMoeda(termo.saldoSalario)],
-      ['Aviso Prévio', formatarMoeda(0)],
       ['Férias Proporcionais', formatarMoeda(termo.feriasProporcionais)],
-      ['1/3 Férias', formatarMoeda(termo.tercoFerias)],
-      ['13º Proporcional', formatarMoeda(termo.decimoTerceiroProporcional)],
-      ['Multa FGTS', formatarMoeda(termo.multaFGTS)],
-      ['', ''],
-      ['TOTAL PROVENTOS', formatarMoeda(termo.totalProventos)],
-      ['TOTAL DESCONTOS', formatarMoeda(termo.totalDescontos)],
       ['VALOR LÍQUIDO', formatarMoeda(termo.valorLiquido)],
     ];
 
     autoTable(doc, {
-      startY: 94,
-      head: [['Verbas Rescisórias', 'Valor']],
+      startY: 88,
+      head: [['Verba', 'Valor']],
       body: tableData,
       theme: 'grid',
       styles: { fontSize: 10, cellPadding: 4 },
@@ -367,27 +405,15 @@ export function generatePDFRescisao(colaborador: Colaborador, termo: TermoRescis
       columnStyles: { 1: { halign: 'right' } },
     });
 
-    const finalY = (doc as any).lastAutoTable?.finalY || 180;
-    const sigY = finalY + 15;
-    doc.line(30, sigY, 90, sigY);
-    doc.text('Empregador', 60, sigY + 5, { align: 'center' });
-    doc.line(120, sigY, 180, sigY);
-    doc.text('Empregado', 150, sigY + 5, { align: 'center' });
-
     const filename = `rescisao_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`;
-    exibirPDFEmModal(doc, `Termo de Rescisão - ${colaborador.nomeCompleto}`, filename);
+    const previewHTML = `<div style="text-align: center; padding: 40px;">
+      <h2>Termo de Rescisão</h2>
+      <p><strong>${colaborador.nomeCompleto}</strong></p>
+      <p>Valor Líquido: <strong>${formatarMoeda(termo.valorLiquido)}</strong></p>
+    </div>`;
+    exibirPDFComPreview(doc, `Rescisão - ${colaborador.nomeCompleto}`, filename, previewHTML);
   } catch (error) {
-    console.error('Erro ao gerar PDF de rescisão:', error);
+    console.error('Erro ao gerar PDF:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
-}
-
-function getTipoRescisaoLabel(tipo: string): string {
-  const labels: Record<string, string> = {
-    'sem_justa_causa': 'Dispensa sem Justa Causa',
-    'com_justa_causa': 'Dispensa com Justa Causa',
-    'pedido_demissao': 'Pedido de Demissão',
-    'acordo': 'Acordo Mútuo (Reforma Trabalhista)',
-  };
-  return labels[tipo] || tipo;
 }
