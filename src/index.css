@@ -34,32 +34,64 @@ body {
 
 /* Print styles */
 @media print {
-  .print\:hidden {
-    display: none !important;
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   
   html, body, #root {
-    height: auto;
-    overflow: visible;
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
   }
   
   body {
-    background: white !important;
-    font-size: 9pt;
+    font-size: 10pt;
   }
   
-  main {
-    padding: 0 !important;
-    max-width: 100% !important;
-  }
-  
-  .no-print {
+  /* Hide navigation and non-essential elements */
+  header, footer, .print\:hidden, button, nav {
     display: none !important;
   }
   
+  /* Show main content */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+  
+  /* Make dashboard content visible */
+  main > div {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  /* Ensure all content is visible */
+  .overflow-hidden {
+    overflow: visible !important;
+  }
+  
+  .h-full, .h-screen {
+    height: auto !important;
+  }
+  
+  /* Remove shadows and borders for cleaner print */
+  .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
+    box-shadow: none !important;
+  }
+  
+  /* Page setup */
   @page {
     size: A4;
-    margin: 1cm;
+    margin: 1.5cm;
+  }
+  
+  /* Prevent page breaks in important sections */
+  table, .bg-white {
+    page-break-inside: avoid;
   }
 }
 

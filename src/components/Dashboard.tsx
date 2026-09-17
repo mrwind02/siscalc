@@ -247,10 +247,27 @@ export default function Dashboard() {
 
           {/* Ações rápidas */}
           <div className="flex gap-1.5 flex-shrink-0">
-            <button onClick={() => window.print()} className="flex-1 py-1.5 text-[10px] font-medium bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 flex items-center justify-center gap-1">
+            <button 
+              onClick={() => {
+                console.log('Botão Imprimir clicado');
+                window.print();
+              }} 
+              className="flex-1 py-1.5 text-[10px] font-medium bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 flex items-center justify-center gap-1"
+            >
               <Printer size={10} /> Imprimir
             </button>
-            <button onClick={() => folha && gerarPDFHolerite(selectedColaborador, folha)} className="flex-1 py-1.5 text-[10px] font-medium bg-blue-900 text-white rounded-lg hover:bg-blue-800 flex items-center justify-center gap-1">
+            <button 
+              onClick={() => {
+                console.log('Botão PDF clicado', { selectedColaborador, folha });
+                if (folha && selectedColaborador) {
+                  gerarPDFHolerite(selectedColaborador, folha);
+                } else {
+                  console.error('Dados insuficientes para gerar PDF');
+                  alert('Erro: Dados insuficientes para gerar PDF');
+                }
+              }} 
+              className="flex-1 py-1.5 text-[10px] font-medium bg-blue-900 text-white rounded-lg hover:bg-blue-800 flex items-center justify-center gap-1"
+            >
               <Download size={10} /> PDF Holerite
             </button>
           </div>
