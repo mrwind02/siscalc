@@ -92,14 +92,14 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [26, 54, 93], textColor: 255, fontStyle: 'bold' },
       columnStyles: {
-        0: { cellWidth: 12 },
-        1: { cellWidth: 50 },
-        2: { cellWidth: 15 },
-        3: { cellWidth: 25, halign: 'right' },
-        4: { cellWidth: 12 },
-        5: { cellWidth: 45 },
-        6: { cellWidth: 15 },
-        7: { cellWidth: 25, halign: 'right' },
+        0: { cellWidth: 10 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 12 },
+        3: { cellWidth: 22, halign: 'right' },
+        4: { cellWidth: 10 },
+        5: { cellWidth: 38 },
+        6: { cellWidth: 12 },
+        7: { cellWidth: 22, halign: 'right' },
       },
     });
     console.log('autoTable concluído com sucesso');
@@ -134,52 +134,106 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
     console.log('Gerando PDF...');
     const filename = `holerite_${colaborador.nomeCompleto.replace(/\s/g, '_')}_${folha.mesReferencia}.pdf`;
     
-    // Tenta salvar diretamente primeiro
-    try {
-      doc.save(filename);
-      console.log('PDF salvo com sucesso:', filename);
-    } catch (saveError) {
-      console.warn('Download direto bloqueado, tentando alternativa...', saveError);
-      // Fallback: abre em nova aba
-      const pdfBlob = doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      const newWindow = window.open(pdfUrl, '_blank');
-      if (newWindow) {
-        console.log('PDF aberto em nova aba');
-      } else {
-        // Se nova aba também for bloqueada, mostra link para download manual
-        const link = document.createElement('a');
-        link.href = pdfUrl;
-        link.download = filename;
-        link.textContent = 'Clique aqui para baixar o PDF';
-        link.style.display = 'block';
-        link.style.margin = '20px';
-        link.style.padding = '10px';
-        link.style.backgroundColor = '#1e40af';
-        link.style.color = 'white';
-        link.style.textAlign = 'center';
-        link.style.textDecoration = 'none';
-        link.style.borderRadius = '5px';
-        
-        const container = document.createElement('div');
-        container.style.position = 'fixed';
-        container.style.top = '50%';
-        container.style.left = '50%';
-        container.style.transform = 'translate(-50%, -50%)';
-        container.style.backgroundColor = 'white';
-        container.style.padding = '20px';
-        container.style.borderRadius = '10px';
-        container.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-        container.style.zIndex = '9999';
-        container.appendChild(link);
-        document.body.appendChild(container);
-        
-        setTimeout(() => {
-          document.body.removeChild(container);
-          URL.revokeObjectURL(pdfUrl);
-        }, 30000);
-      }
-    }
+    // Gera o PDF como base64 para exibir em iframe
+    const pdfBase64 = doc.output('datauristring');
+    
+    // Cria modal com iframe para exibir o PDF
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    `;
+    
+    const container = document.createElement('div');
+    container.style.cssText = `
+      background: white;
+      width: 100%;
+      max-width: 900px;
+      height: 90vh;
+      border-radius: 10px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    `;
+    
+    // Header do modal
+    const header = document.createElement('div');
+    header.style.cssText = `
+      padding: 15px 20px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    `;
+    
+    const title = document.createElement('h3');
+    title.textContent = `Holerite - ${filename}`;
+    title.style.cssText = 'margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;';
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'display: flex; gap: 10px;';
+    
+    // Botão de download
+    const downloadBtn = document.createElement('a');
+    downloadBtn.href = pdfBase64;
+    downloadBtn.download = filename;
+    downloadBtn.textContent = '⬇ Download';
+    downloadBtn.style.cssText = `
+      padding: 8px 16px;
+      background: #1e40af;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-block;
+    `;
+    
+    // Botão de fechar
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕ Fechar';
+    closeBtn.style.cssText = `
+      padding: 8px 16px;
+      background: #ef4444;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    `;
+    closeBtn.onclick = () => document.body.removeChild(modal);
+    
+    buttonContainer.appendChild(downloadBtn);
+    buttonContainer.appendChild(closeBtn);
+    header.appendChild(title);
+    header.appendChild(buttonContainer);
+    
+    // Iframe para exibir o PDF
+    const iframe = document.createElement('iframe');
+    iframe.src = pdfBase64;
+    iframe.style.cssText = `
+      flex: 1;
+      width: 100%;
+      border: none;
+      border-radius: 0 0 10px 10px;
+    `;
+    
+    container.appendChild(header);
+    container.appendChild(iframe);
+    modal.appendChild(container);
+    document.body.appendChild(modal);
+    
+    console.log('PDF exibido em modal com iframe');
   } catch (error) {
     console.error('Erro ao gerar PDF:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
@@ -229,30 +283,103 @@ export function gerarPDFFerias(colaborador: Colaborador, recibo: ReciboFerias, e
     doc.text('Assinatura do Colaborador', 105, sigY + 5, { align: 'center' });
 
     const filename = `ferias_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`;
-    try {
-      doc.save(filename);
-      console.log('PDF de férias salvo com sucesso');
-    } catch (saveError) {
-      console.warn('Download direto bloqueado, tentando alternativa...', saveError);
-      const pdfBlob = doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      const newWindow = window.open(pdfUrl, '_blank');
-      if (!newWindow) {
-        const link = document.createElement('a');
-        link.href = pdfUrl;
-        link.download = filename;
-        link.textContent = 'Clique aqui para baixar o PDF de Férias';
-        link.style.cssText = 'display:block;margin:20px;padding:10px;background:#1e40af;color:white;text-align:center;text-decoration:none;border-radius:5px;';
-        const container = document.createElement('div');
-        container.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border-radius:10px;box-shadow:0 4px 6px rgba(0,0,0,0.1);z-index:9999;';
-        container.appendChild(link);
-        document.body.appendChild(container);
-        setTimeout(() => {
-          document.body.removeChild(container);
-          URL.revokeObjectURL(pdfUrl);
-        }, 30000);
-      }
-    }
+    
+    // Gera o PDF como base64 para exibir em iframe
+    const pdfBase64 = doc.output('datauristring');
+    
+    // Cria modal com iframe para exibir o PDF
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    `;
+    
+    const container = document.createElement('div');
+    container.style.cssText = `
+      background: white;
+      width: 100%;
+      max-width: 900px;
+      height: 90vh;
+      border-radius: 10px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    `;
+    
+    const header = document.createElement('div');
+    header.style.cssText = `
+      padding: 15px 20px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    `;
+    
+    const title = document.createElement('h3');
+    title.textContent = `Recibo de Férias - ${filename}`;
+    title.style.cssText = 'margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;';
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'display: flex; gap: 10px;';
+    
+    const downloadBtn = document.createElement('a');
+    downloadBtn.href = pdfBase64;
+    downloadBtn.download = filename;
+    downloadBtn.textContent = '⬇ Download';
+    downloadBtn.style.cssText = `
+      padding: 8px 16px;
+      background: #1e40af;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-block;
+    `;
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕ Fechar';
+    closeBtn.style.cssText = `
+      padding: 8px 16px;
+      background: #ef4444;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    `;
+    closeBtn.onclick = () => document.body.removeChild(modal);
+    
+    buttonContainer.appendChild(downloadBtn);
+    buttonContainer.appendChild(closeBtn);
+    header.appendChild(title);
+    header.appendChild(buttonContainer);
+    
+    const iframe = document.createElement('iframe');
+    iframe.src = pdfBase64;
+    iframe.style.cssText = `
+      flex: 1;
+      width: 100%;
+      border: none;
+      border-radius: 0 0 10px 10px;
+    `;
+    
+    container.appendChild(header);
+    container.appendChild(iframe);
+    modal.appendChild(container);
+    document.body.appendChild(modal);
+    
+    console.log('PDF de férias exibido em modal');
   } catch (error) {
     console.error('Erro ao gerar PDF de férias:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
@@ -309,30 +436,103 @@ export function generatePDFRescisao(colaborador: Colaborador, termo: TermoRescis
     doc.text('Empregado', 150, sigY + 5, { align: 'center' });
 
     const filename = `rescisao_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`;
-    try {
-      doc.save(filename);
-      console.log('PDF de rescisão salvo com sucesso');
-    } catch (saveError) {
-      console.warn('Download direto bloqueado, tentando alternativa...', saveError);
-      const pdfBlob = doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      const newWindow = window.open(pdfUrl, '_blank');
-      if (!newWindow) {
-        const link = document.createElement('a');
-        link.href = pdfUrl;
-        link.download = filename;
-        link.textContent = 'Clique aqui para baixar o PDF de Rescisão';
-        link.style.cssText = 'display:block;margin:20px;padding:10px;background:#1e40af;color:white;text-align:center;text-decoration:none;border-radius:5px;';
-        const container = document.createElement('div');
-        container.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border-radius:10px;box-shadow:0 4px 6px rgba(0,0,0,0.1);z-index:9999;';
-        container.appendChild(link);
-        document.body.appendChild(container);
-        setTimeout(() => {
-          document.body.removeChild(container);
-          URL.revokeObjectURL(pdfUrl);
-        }, 30000);
-      }
-    }
+    
+    // Gera o PDF como base64 para exibir em iframe
+    const pdfBase64 = doc.output('datauristring');
+    
+    // Cria modal com iframe para exibir o PDF
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    `;
+    
+    const container = document.createElement('div');
+    container.style.cssText = `
+      background: white;
+      width: 100%;
+      max-width: 900px;
+      height: 90vh;
+      border-radius: 10px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    `;
+    
+    const header = document.createElement('div');
+    header.style.cssText = `
+      padding: 15px 20px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    `;
+    
+    const title = document.createElement('h3');
+    title.textContent = `Termo de Rescisão - ${filename}`;
+    title.style.cssText = 'margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;';
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'display: flex; gap: 10px;';
+    
+    const downloadBtn = document.createElement('a');
+    downloadBtn.href = pdfBase64;
+    downloadBtn.download = filename;
+    downloadBtn.textContent = '⬇ Download';
+    downloadBtn.style.cssText = `
+      padding: 8px 16px;
+      background: #1e40af;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-block;
+    `;
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕ Fechar';
+    closeBtn.style.cssText = `
+      padding: 8px 16px;
+      background: #ef4444;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    `;
+    closeBtn.onclick = () => document.body.removeChild(modal);
+    
+    buttonContainer.appendChild(downloadBtn);
+    buttonContainer.appendChild(closeBtn);
+    header.appendChild(title);
+    header.appendChild(buttonContainer);
+    
+    const iframe = document.createElement('iframe');
+    iframe.src = pdfBase64;
+    iframe.style.cssText = `
+      flex: 1;
+      width: 100%;
+      border: none;
+      border-radius: 0 0 10px 10px;
+    `;
+    
+    container.appendChild(header);
+    container.appendChild(iframe);
+    modal.appendChild(container);
+    document.body.appendChild(modal);
+    
+    console.log('PDF de rescisão exibido em modal');
   } catch (error) {
     console.error('Erro ao gerar PDF de rescisão:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
