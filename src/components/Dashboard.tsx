@@ -56,59 +56,81 @@ export default function Dashboard() {
     setSearchTerm('');
   };
 
-  if (!selectedColaborador) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-14 h-14 mx-auto mb-2 bg-blue-100 rounded-full flex items-center justify-center">
-            <User size={24} className="text-blue-900" />
-          </div>
-          <h3 className="text-base font-semibold text-slate-700">Selecione um Colaborador</h3>
-          <p className="text-xs text-slate-400 mt-1">Use o seletor acima para visualizar o dashboard</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full flex flex-col gap-1.5 overflow-hidden">
-      {/* Barra superior compacta */}
+      {/* Barra superior compacta - SEMPRE visível */}
       <div className="flex items-center justify-between bg-white rounded-lg border border-slate-200 px-3 py-1.5 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center text-white text-xs font-bold">
-            {selectedColaborador.nomeCompleto.split(' ').map(n => n[0]).slice(0, 2).join('')}
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-800 leading-tight">{selectedColaborador.nomeCompleto}</h3>
-            <p className="text-[10px] text-slate-500">{selectedColaborador.cargo} • {selectedColaborador.departamento} • {formatarCPF(selectedColaborador.cpf)}</p>
-          </div>
+          {selectedColaborador ? (
+            <>
+              <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center text-white text-xs font-bold">
+                {selectedColaborador.nomeCompleto.split(' ').map(n => n[0]).slice(0, 2).join('')}
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 leading-tight">{selectedColaborador.nomeCompleto}</h3>
+                <p className="text-[10px] text-slate-500">{selectedColaborador.cargo} • {selectedColaborador.departamento} • {formatarCPF(selectedColaborador.cpf)}</p>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
+                <User size={16} className="text-slate-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-500 leading-tight">Nenhum colaborador selecionado</h3>
+                <p className="text-[10px] text-slate-400">Clique em "Selecionar" para escolher um colaborador</p>
+              </div>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
-            <button onClick={() => setShowDropdown(!showDropdown)} className="flex items-center gap-1 px-2 py-1 text-xs border border-slate-200 rounded hover:bg-slate-50">
-              <Search size={12} className="text-slate-400" />
-              <span className="max-w-[120px] truncate">Trocar</span>
+            <button onClick={() => setShowDropdown(!showDropdown)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-900 text-white rounded-lg hover:bg-blue-800 shadow-sm">
+              <Search size={12} />
+              <span>{selectedColaborador ? 'Trocar' : 'Selecionar'}</span>
               <ChevronDown size={10} />
             </button>
             {showDropdown && (
-              <div className="absolute top-full right-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
-                <div className="p-1.5 border-b border-slate-100">
-                  <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full px-2 py-1 text-xs border border-slate-200 rounded" autoFocus />
+              <div className="absolute top-full right-0 mt-1 w-72 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
+                <div className="p-2 border-b border-slate-100 sticky top-0 bg-white">
+                  <input type="text" placeholder="Buscar por nome ou CPF..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded" autoFocus />
                 </div>
-                {filteredCols.map(col => (
-                  <button key={col.id} onClick={() => handleSelectColaborador(col.id)} className="w-full px-2 py-1.5 text-left hover:bg-blue-50 text-xs">
-                    <span className="font-medium">{col.nomeCompleto}</span>
-                    <span className="text-slate-400 ml-1">• {col.cargo}</span>
-                  </button>
-                ))}
+                <div className="py-1">
+                  {filteredCols.length === 0 ? (
+                    <div className="px-3 py-4 text-center text-xs text-slate-400">Nenhum colaborador encontrado</div>
+                  ) : (
+                    filteredCols.map(col => (
+                      <button key={col.id} onClick={() => handleSelectColaborador(col.id)} className="w-full px-3 py-2 text-left hover:bg-blue-50 flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-900 flex-shrink-0">
+                          {col.nomeCompleto.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium text-slate-700 truncate">{col.nomeCompleto}</div>
+                          <div className="text-[10px] text-slate-400 truncate">{col.cargo} • {col.departamento}</div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
             )}
           </div>
-          <input type="month" value={mesReferencia} onChange={e => setMesReferencia(e.target.value)} className="px-2 py-1 text-xs border border-slate-200 rounded" />
+          <input type="month" value={mesReferencia} onChange={e => setMesReferencia(e.target.value)} className="px-2 py-1.5 text-xs border border-slate-200 rounded-lg" />
         </div>
       </div>
 
-      {/* Grid principal ultra-compacto */}
+      {/* Grid principal ultra-compacto ou placeholder */}
+      {!selectedColaborador ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-14 h-14 mx-auto mb-2 bg-blue-100 rounded-full flex items-center justify-center">
+              <User size={24} className="text-blue-900" />
+            </div>
+            <h3 className="text-base font-semibold text-slate-700">Selecione um Colaborador</h3>
+            <p className="text-xs text-slate-400 mt-1">Clique no botão "Selecionar" acima para visualizar o dashboard</p>
+          </div>
+        </div>
+      ) : (
       <div className="flex-1 grid grid-cols-12 gap-2 min-h-0">
         {/* Coluna esquerda: Info + Cards + Gráfico */}
         <div className="col-span-3 flex flex-col gap-2 min-h-0">
@@ -234,6 +256,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
