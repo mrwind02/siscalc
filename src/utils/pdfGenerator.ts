@@ -134,10 +134,11 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
     console.log('Gerando PDF...');
     const filename = `holerite_${colaborador.nomeCompleto.replace(/\s/g, '_')}_${folha.mesReferencia}.pdf`;
     
-    // Gera o PDF como base64 para exibir em iframe
-    const pdfBase64 = doc.output('datauristring');
+    // Gera o PDF como Blob
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
     
-    // Cria modal com iframe para exibir o PDF
+    // Cria modal para exibir o PDF
     const modal = document.createElement('div');
     modal.style.cssText = `
       position: fixed;
@@ -184,7 +185,7 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
     
     // Botão de download
     const downloadBtn = document.createElement('a');
-    downloadBtn.href = pdfBase64;
+    downloadBtn.href = pdfUrl;
     downloadBtn.download = filename;
     downloadBtn.textContent = '⬇ Download';
     downloadBtn.style.cssText = `
@@ -211,16 +212,20 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
       cursor: pointer;
       font-size: 14px;
     `;
-    closeBtn.onclick = () => document.body.removeChild(modal);
+    closeBtn.onclick = () => {
+      document.body.removeChild(modal);
+      URL.revokeObjectURL(pdfUrl);
+    };
     
     buttonContainer.appendChild(downloadBtn);
     buttonContainer.appendChild(closeBtn);
     header.appendChild(title);
     header.appendChild(buttonContainer);
     
-    // Iframe para exibir o PDF
+    // Iframe para exibir o PDF com permissões adequadas
     const iframe = document.createElement('iframe');
-    iframe.src = pdfBase64;
+    iframe.src = pdfUrl;
+    iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.style.cssText = `
       flex: 1;
       width: 100%;
@@ -233,7 +238,7 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
     modal.appendChild(container);
     document.body.appendChild(modal);
     
-    console.log('PDF exibido em modal com iframe');
+    console.log('PDF exibido em modal com Blob URL');
   } catch (error) {
     console.error('Erro ao gerar PDF:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
@@ -284,10 +289,11 @@ export function gerarPDFFerias(colaborador: Colaborador, recibo: ReciboFerias, e
 
     const filename = `ferias_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`;
     
-    // Gera o PDF como base64 para exibir em iframe
-    const pdfBase64 = doc.output('datauristring');
+    // Gera o PDF como Blob
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
     
-    // Cria modal com iframe para exibir o PDF
+    // Cria modal para exibir o PDF
     const modal = document.createElement('div');
     modal.style.cssText = `
       position: fixed;
@@ -332,7 +338,7 @@ export function gerarPDFFerias(colaborador: Colaborador, recibo: ReciboFerias, e
     buttonContainer.style.cssText = 'display: flex; gap: 10px;';
     
     const downloadBtn = document.createElement('a');
-    downloadBtn.href = pdfBase64;
+    downloadBtn.href = pdfUrl;
     downloadBtn.download = filename;
     downloadBtn.textContent = '⬇ Download';
     downloadBtn.style.cssText = `
@@ -358,7 +364,10 @@ export function gerarPDFFerias(colaborador: Colaborador, recibo: ReciboFerias, e
       cursor: pointer;
       font-size: 14px;
     `;
-    closeBtn.onclick = () => document.body.removeChild(modal);
+    closeBtn.onclick = () => {
+      document.body.removeChild(modal);
+      URL.revokeObjectURL(pdfUrl);
+    };
     
     buttonContainer.appendChild(downloadBtn);
     buttonContainer.appendChild(closeBtn);
@@ -366,7 +375,8 @@ export function gerarPDFFerias(colaborador: Colaborador, recibo: ReciboFerias, e
     header.appendChild(buttonContainer);
     
     const iframe = document.createElement('iframe');
-    iframe.src = pdfBase64;
+    iframe.src = pdfUrl;
+    iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.style.cssText = `
       flex: 1;
       width: 100%;
@@ -379,7 +389,7 @@ export function gerarPDFFerias(colaborador: Colaborador, recibo: ReciboFerias, e
     modal.appendChild(container);
     document.body.appendChild(modal);
     
-    console.log('PDF de férias exibido em modal');
+    console.log('PDF de férias exibido em modal com Blob URL');
   } catch (error) {
     console.error('Erro ao gerar PDF de férias:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
@@ -437,10 +447,11 @@ export function generatePDFRescisao(colaborador: Colaborador, termo: TermoRescis
 
     const filename = `rescisao_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`;
     
-    // Gera o PDF como base64 para exibir em iframe
-    const pdfBase64 = doc.output('datauristring');
+    // Gera o PDF como Blob
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
     
-    // Cria modal com iframe para exibir o PDF
+    // Cria modal para exibir o PDF
     const modal = document.createElement('div');
     modal.style.cssText = `
       position: fixed;
@@ -485,7 +496,7 @@ export function generatePDFRescisao(colaborador: Colaborador, termo: TermoRescis
     buttonContainer.style.cssText = 'display: flex; gap: 10px;';
     
     const downloadBtn = document.createElement('a');
-    downloadBtn.href = pdfBase64;
+    downloadBtn.href = pdfUrl;
     downloadBtn.download = filename;
     downloadBtn.textContent = '⬇ Download';
     downloadBtn.style.cssText = `
@@ -511,7 +522,10 @@ export function generatePDFRescisao(colaborador: Colaborador, termo: TermoRescis
       cursor: pointer;
       font-size: 14px;
     `;
-    closeBtn.onclick = () => document.body.removeChild(modal);
+    closeBtn.onclick = () => {
+      document.body.removeChild(modal);
+      URL.revokeObjectURL(pdfUrl);
+    };
     
     buttonContainer.appendChild(downloadBtn);
     buttonContainer.appendChild(closeBtn);
@@ -519,7 +533,8 @@ export function generatePDFRescisao(colaborador: Colaborador, termo: TermoRescis
     header.appendChild(buttonContainer);
     
     const iframe = document.createElement('iframe');
-    iframe.src = pdfBase64;
+    iframe.src = pdfUrl;
+    iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.style.cssText = `
       flex: 1;
       width: 100%;
@@ -532,7 +547,7 @@ export function generatePDFRescisao(colaborador: Colaborador, termo: TermoRescis
     modal.appendChild(container);
     document.body.appendChild(modal);
     
-    console.log('PDF de rescisão exibido em modal');
+    console.log('PDF de rescisão exibido em modal com Blob URL');
   } catch (error) {
     console.error('Erro ao gerar PDF de rescisão:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
