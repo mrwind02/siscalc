@@ -131,11 +131,55 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
     doc.line(50, sigY, 160, sigY);
     doc.text('Assinatura do Colaborador', 105, sigY + 5, { align: 'center' });
 
-    console.log('Salvando PDF...');
+    console.log('Gerando PDF...');
     const filename = `holerite_${colaborador.nomeCompleto.replace(/\s/g, '_')}_${folha.mesReferencia}.pdf`;
-    doc.save(filename);
-    console.log('PDF salvo com sucesso:', filename);
-    alert(`PDF gerado com sucesso: ${filename}`);
+    
+    // Tenta salvar diretamente primeiro
+    try {
+      doc.save(filename);
+      console.log('PDF salvo com sucesso:', filename);
+    } catch (saveError) {
+      console.warn('Download direto bloqueado, tentando alternativa...', saveError);
+      // Fallback: abre em nova aba
+      const pdfBlob = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const newWindow = window.open(pdfUrl, '_blank');
+      if (newWindow) {
+        console.log('PDF aberto em nova aba');
+      } else {
+        // Se nova aba também for bloqueada, mostra link para download manual
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = filename;
+        link.textContent = 'Clique aqui para baixar o PDF';
+        link.style.display = 'block';
+        link.style.margin = '20px';
+        link.style.padding = '10px';
+        link.style.backgroundColor = '#1e40af';
+        link.style.color = 'white';
+        link.style.textAlign = 'center';
+        link.style.textDecoration = 'none';
+        link.style.borderRadius = '5px';
+        
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '50%';
+        container.style.left = '50%';
+        container.style.transform = 'translate(-50%, -50%)';
+        container.style.backgroundColor = 'white';
+        container.style.padding = '20px';
+        container.style.borderRadius = '10px';
+        container.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+        container.style.zIndex = '9999';
+        container.appendChild(link);
+        document.body.appendChild(container);
+        
+        setTimeout(() => {
+          document.body.removeChild(container);
+          URL.revokeObjectURL(pdfUrl);
+        }, 30000);
+      }
+    }
   } catch (error) {
     console.error('Erro ao gerar PDF:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
@@ -184,8 +228,31 @@ export function gerarPDFFerias(colaborador: Colaborador, recibo: ReciboFerias, e
     doc.line(50, sigY, 160, sigY);
     doc.text('Assinatura do Colaborador', 105, sigY + 5, { align: 'center' });
 
-    doc.save(`ferias_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`);
-    alert('PDF de férias gerado com sucesso!');
+    const filename = `ferias_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`;
+    try {
+      doc.save(filename);
+      console.log('PDF de férias salvo com sucesso');
+    } catch (saveError) {
+      console.warn('Download direto bloqueado, tentando alternativa...', saveError);
+      const pdfBlob = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const newWindow = window.open(pdfUrl, '_blank');
+      if (!newWindow) {
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = filename;
+        link.textContent = 'Clique aqui para baixar o PDF de Férias';
+        link.style.cssText = 'display:block;margin:20px;padding:10px;background:#1e40af;color:white;text-align:center;text-decoration:none;border-radius:5px;';
+        const container = document.createElement('div');
+        container.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border-radius:10px;box-shadow:0 4px 6px rgba(0,0,0,0.1);z-index:9999;';
+        container.appendChild(link);
+        document.body.appendChild(container);
+        setTimeout(() => {
+          document.body.removeChild(container);
+          URL.revokeObjectURL(pdfUrl);
+        }, 30000);
+      }
+    }
   } catch (error) {
     console.error('Erro ao gerar PDF de férias:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
@@ -241,8 +308,31 @@ export function generatePDFRescisao(colaborador: Colaborador, termo: TermoRescis
     doc.line(120, sigY, 180, sigY);
     doc.text('Empregado', 150, sigY + 5, { align: 'center' });
 
-    doc.save(`rescisao_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`);
-    alert('PDF de rescisão gerado com sucesso!');
+    const filename = `rescisao_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`;
+    try {
+      doc.save(filename);
+      console.log('PDF de rescisão salvo com sucesso');
+    } catch (saveError) {
+      console.warn('Download direto bloqueado, tentando alternativa...', saveError);
+      const pdfBlob = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const newWindow = window.open(pdfUrl, '_blank');
+      if (!newWindow) {
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = filename;
+        link.textContent = 'Clique aqui para baixar o PDF de Rescisão';
+        link.style.cssText = 'display:block;margin:20px;padding:10px;background:#1e40af;color:white;text-align:center;text-decoration:none;border-radius:5px;';
+        const container = document.createElement('div');
+        container.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border-radius:10px;box-shadow:0 4px 6px rgba(0,0,0,0.1);z-index:9999;';
+        container.appendChild(link);
+        document.body.appendChild(container);
+        setTimeout(() => {
+          document.body.removeChild(container);
+          URL.revokeObjectURL(pdfUrl);
+        }, 30000);
+      }
+    }
   } catch (error) {
     console.error('Erro ao gerar PDF de rescisão:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);

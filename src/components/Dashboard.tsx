@@ -7,6 +7,7 @@ import { useAppContext } from '../context/AppContext';
 import { processarFolha } from '../utils/payrollEngine';
 import { formatarMoeda, formatarCPF, formatarData, calcularFerias, calcularRescisao } from '../utils/taxEngine';
 import { gerarPDFHolerite, gerarPDFFerias, generatePDFRescisao } from '../utils/pdfGenerator';
+import { imprimirHolerite } from '../utils/printHelper';
 import { FileText, Palmtree, LogOut, History, Search, Download, ChevronDown, TrendingUp, TrendingDown, Wallet, Calculator, Calendar, User, Printer } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { TipoRescisao } from '../types';
@@ -250,7 +251,11 @@ export default function Dashboard() {
             <button 
               onClick={() => {
                 console.log('Botão Imprimir clicado');
-                window.print();
+                if (folha && selectedColaborador) {
+                  imprimirHolerite(selectedColaborador, folha);
+                } else {
+                  console.error('Dados insuficientes para imprimir');
+                }
               }} 
               className="flex-1 py-1.5 text-[10px] font-medium bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 flex items-center justify-center gap-1"
             >
