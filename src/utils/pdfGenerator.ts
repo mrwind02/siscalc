@@ -36,6 +36,7 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
     
     const doc = new jsPDF();
     console.log('jsPDF criado com sucesso');
+    console.log('doc.autoTable existe?', typeof (doc as any).autoTable);
     
     addHeader(doc, empresa);
     console.log('Header adicionado');
@@ -80,30 +81,28 @@ export function gerarPDFHolerite(colaborador: Colaborador, folha: FolhaPagamento
     ]);
 
     console.log('Chamando autoTable...');
-    try {
-      autoTable(doc, {
-        startY: 68,
-        head: [['Cód', 'Proventos', 'Ref.', 'Valor', 'Cód', 'Descontos', 'Ref.', 'Valor']],
-        body: tableData,
-        theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [26, 54, 93], textColor: 255, fontStyle: 'bold' },
-        columnStyles: {
-          0: { cellWidth: 12 },
-          1: { cellWidth: 50 },
-          2: { cellWidth: 15 },
-          3: { cellWidth: 25, halign: 'right' },
-          4: { cellWidth: 12 },
-          5: { cellWidth: 45 },
-          6: { cellWidth: 15 },
-          7: { cellWidth: 25, halign: 'right' },
-        },
-      });
-      console.log('autoTable concluído com sucesso');
-    } catch (autoTableError) {
-      console.error('Erro no autoTable:', autoTableError);
-      throw autoTableError;
-    }
+    console.log('tableData:', tableData);
+    
+    // Usa a função autoTable com o documento
+    autoTable(doc, {
+      startY: 68,
+      head: [['Cód', 'Proventos', 'Ref.', 'Valor', 'Cód', 'Descontos', 'Ref.', 'Valor']],
+      body: tableData,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [26, 54, 93], textColor: 255, fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 12 },
+        1: { cellWidth: 50 },
+        2: { cellWidth: 15 },
+        3: { cellWidth: 25, halign: 'right' },
+        4: { cellWidth: 12 },
+        5: { cellWidth: 45 },
+        6: { cellWidth: 15 },
+        7: { cellWidth: 25, halign: 'right' },
+      },
+    });
+    console.log('autoTable concluído com sucesso');
 
     // Bases de cálculo
     const finalY = (doc as any).lastAutoTable?.finalY || 150;
@@ -186,9 +185,10 @@ export function gerarPDFFerias(colaborador: Colaborador, recibo: ReciboFerias, e
     doc.text('Assinatura do Colaborador', 105, sigY + 5, { align: 'center' });
 
     doc.save(`ferias_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`);
+    alert('PDF de férias gerado com sucesso!');
   } catch (error) {
     console.error('Erro ao gerar PDF de férias:', error);
-    alert('Erro ao gerar PDF. Verifique o console para mais detalhes.');
+    alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
 
@@ -242,9 +242,10 @@ export function generatePDFRescisao(colaborador: Colaborador, termo: TermoRescis
     doc.text('Empregado', 150, sigY + 5, { align: 'center' });
 
     doc.save(`rescisao_${colaborador.nomeCompleto.replace(/\s/g, '_')}.pdf`);
+    alert('PDF de rescisão gerado com sucesso!');
   } catch (error) {
     console.error('Erro ao gerar PDF de rescisão:', error);
-    alert('Erro ao gerar PDF. Verifique o console para mais detalhes.');
+    alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
 
