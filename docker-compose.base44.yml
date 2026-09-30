@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: siscalc
+      POSTGRES_PASSWORD: siscalc_dev
+      POSTGRES_DB: siscalc
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siscalc -d siscalc"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: on-failure
+
+  web:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://siscalc:siscalc_dev@db:5432/siscalc
+      - BASE44_PUBLIC_HOST_SUFFIX=${BASE44_PUBLIC_HOST_SUFFIX}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-ec", "npm install && npx prisma generate && npx prisma db push && npx tsx prisma/seed.ts && exec npm run dev"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
+    restart: on-failure
+
+volumes:
+  pgdata:
